@@ -7,298 +7,182 @@
 
 <!-- Estilos -->
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f5f5f5;
-        margin: 0;
-        padding: 0;
-        color: #333;
-    }
-    header {
-        background: #1e3a8a;
-        color: white;
-        padding: 15px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    header img {
-        height: 55px;
-    }
-    header h1 {
-        margin: 0;
-        font-size: 24px;
-    }
-    .container {
-        max-width: 900px;
-        margin: auto;
-        padding: 20px;
-    }
-    .card {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    button {
-        background: #1e3a8a;
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        margin-top: 10px;
-    }
-    button:hover {
-        background: #274cb8;
-    }
-    input, select {
-        width: 100%;
-        padding: 10px;
-        margin-top: 8px;
-        border: 1px solid #aaa;
-        border-radius: 6px;
-    }
-    .admin-only {
-        display: none;
-    }
-    #qr-video {
-        width: 100%;
-        height: auto;
-        border-radius: 8px;
-        margin-top: 10px;
-    }
-    .hidden {
-        display: none !important;
-    }
+body{font-family:Arial;background:#f2f2f2;margin:0}
+header{background:#1e3a8a;color:#fff;padding:15px}
+header h1{margin:0;font-size:22px}
+.container{max-width:900px;margin:auto;padding:15px}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+input,button{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:1px solid #aaa}
+button{background:#1e3a8a;color:#fff;border:none}
+.estado{font-weight:bold}
+.disponible{color:green}
+.prestado{color:red}
+.admin-only{display:none}
+#qr-reader{width:100%}
 </style>
 
+<!-- Escáner QR compatible móvil -->
+<script src="https://unpkg.com/html5-qrcode"></script>
 </head>
+
 <body>
 
 <header>
-    <!-- LOGO DEL COLEGIO (BASE64) -->
-    <img src="data:image/jpeg;base64,
-/9j/4AAQSkZJRgABAQAAAQABAAD…" alt="logo">
-    <h1>Planilla de Registro ABG</h1>
+<h1>📘 Planilla de Registro ABG</h1>
 </header>
 
 <div class="container">
 
-    <!-- MODO ADMIN -->
-    <div class="card">
-        <h2>Modo Administrador</h2>
-        <input type="password" id="adminPass" placeholder="Ingrese contraseña">
-        <button onclick="activarAdmin()">Entrar</button>
-        <button onclick="desactivarAdmin()">Salir del modo admin</button>
-        <p id="adminStatus"></p>
-    </div>
+<!-- MODO ADMIN -->
+<div class="card">
+<h2>Modo Administrador</h2>
+<input type="password" id="adminPass" placeholder="Contraseña">
+<button onclick="activarAdmin()">Entrar</button>
+<p id="adminEstado"></p>
+</div>
 
-    <!-- REGISTRO DE PRÉSTAMO -->
-    <div class="card">
-        <h2>Registrar Préstamo</h2>
+<!-- REGISTRO -->
+<div class="card">
+<h2>Registrar Préstamo</h2>
 
-        <label>Nombre completo del estudiante</label>
-        <input id="nombre">
+<label>Estudiante (Nombre + Curso)</label>
+<input id="estudiante">
 
-        <label>Curso</label>
-        <input id="curso">
+<label>Docente a cargo</label>
+<input id="docente">
 
-        <label>Docente a cargo</label>
-        <input id="docente">
+<label>Código de equipo</label>
+<input id="equipo">
 
-        <label>Equipo (Código QR o manual)</label>
-        <input id="equipo">
+<button onclick="registrar()">Registrar préstamo</button>
+<button onclick="scanEquipo()">📷 Escanear QR Equipo</button>
+<button onclick="scanEstudiante()">📷 Escanear QR Estudiante</button>
 
-        <button onclick="registrar()">Registrar Préstamo</button>
-    </div>
+<div id="qr-reader"></div>
+<p id="estadoEquipo" class="estado"></p>
+</div>
 
-    <!-- ESCANEO QR -->
-    <div class="card">
-        <h2>Escanear Código QR</h2>
-        <button onclick="iniciarScanner()">Iniciar escáner</button>
-        <video id="qr-video" class="hidden"></video>
-        <p id="qr-result"></p>
-    </div>
+<!-- HISTORIAL -->
+<div class="card admin-only">
+<h2>Historial de préstamos</h2>
+<ul id="historial"></ul>
+</div>
 
-    <!-- SOLO ADMIN  -->
-    <div class="admin-only card">
-        <h2>Generar QR Equipo</h2>
-        <input id="qrTextoEquipo" placeholder="Código del equipo">
-        <button onclick="generarQREquipo()">Generar</button>
-        <div id="qrEquipo"></div>
-    </div>
-
-    <div class="admin-only card">
-        <h2>Generar QR Estudiante</h2>
-        <input id="qrTextoEstudiante" placeholder="Nombre del estudiante">
-        <button onclick="generarQREstudiante()">Generar</button>
-        <div id="qrEstudiante"></div>
-    </div>
-
-    <div class="admin-only card">
-        <h2>Generar PDF con múltiples QR</h2>
-        <button onclick="generarPDF()">Crear PDF</button>
-    </div>
-
-    <div class="admin-only card">
-        <h2>Estadísticas</h2>
-        <p id="stats"></p>
-        <button onclick="calcularStats()">Actualizar estadísticas</button>
-    </div>
-
-    <div class="admin-only card">
-        <h2>Backup / Restaurar</h2>
-        <button onclick="guardarBackup()">Exportar backup</button>
-        <input type="file" id="importBackup" onchange="cargarBackup()">
-    </div>
-
-    <div class="admin-only card">
-        <h2>Instalar App (PWA)</h2>
-        <button onclick="instalarPWA()">Instalar PWA</button>
-    </div>
-
-    <div class="admin-only card">
-        <h2>Historial de Préstamos</h2>
-        <ul id="historial"></ul>
-        <button onclick="mostrarHistorial()">Actualizar historial</button>
-    </div>
+<!-- BACKUP -->
+<div class="card admin-only">
+<h2>Backup</h2>
+<button onclick="exportar()">Exportar backup</button>
+<input type="file" onchange="importar(this)">
+</div>
 
 </div>
 
-<!-- LIBRERÍAS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<!-- SCRIPT PRINCIPAL -->
 <script>
-
-// -------------------------
-//   MODO ADMIN
-// -------------------------
-let adminActivo = false;
-
-function activarAdmin() {
-    const pass = document.getElementById("adminPass").value;
-    if (pass === "1234") {
-        adminActivo = true;
-        document.querySelectorAll(".admin-only").forEach(e => e.style.display = "block");
-        document.getElementById("adminStatus").innerText = "Modo admin ACTIVADO";
-    } else {
-        alert("Contraseña incorrecta");
-    }
-}
-
-function desactivarAdmin() {
-    adminActivo = false;
-    document.querySelectorAll(".admin-only").forEach(e => e.style.display = "none");
-    document.getElementById("adminStatus").innerText = "Modo admin DESACTIVADO";
-}
-
-// -------------------------
-//   REGISTRO DE PRÉSTAMOS
-// -------------------------
-function registrar() {
-    const nombre = document.getElementById("nombre").value;
-    const curso = document.getElementById("curso").value;
-    const docente = document.getElementById("docente").value;
-    const equipo = document.getElementById("equipo").value;
-
-    if (!nombre || !curso || !docente || !equipo) {
-        alert("Faltan datos");
-        return;
-    }
-
-    let historial = JSON.parse(localStorage.getItem("historial")) || [];
-    historial.push({
-        nombre, curso, docente, equipo, fecha: new Date().toLocaleString()
-    });
-    localStorage.setItem("historial", JSON.stringify(historial));
-
-    alert("Préstamo registrado");
-    document.getElementById("equipo").value = "";
-}
-
-// -------------------------
-//   HISTORIAL
-// -------------------------
-function mostrarHistorial() {
-    const lista = document.getElementById("historial");
-    lista.innerHTML = "";
-    let historial = JSON.parse(localStorage.getItem("historial")) || [];
-    historial.forEach(h => {
-        const li = document.createElement("li");
-        li.textContent = `${h.fecha} — ${h.nombre} (${h.curso}) — Docente: ${h.docente} — Equipo: ${h.equipo}`;
-        lista.appendChild(li);
-    });
-}
-
-// -------------------------
-//   ESTADÍSTICAS
-// -------------------------
-function calcularStats() {
-    let historial = JSON.parse(localStorage.getItem("historial")) || [];
-    document.getElementById("stats").innerText =
-        `Total préstamos: ${historial.length}`;
-}
-
-// -------------------------
-//   BACKUP
-// -------------------------
-function guardarBackup() {
-    const data = localStorage.getItem("historial") || "[]";
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "backup_prestamos.json";
-    a.click();
-}
-
-function cargarBackup() {
-    const file = document.getElementById("importBackup").files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-        localStorage.setItem("historial", reader.result);
-        alert("Backup restaurado");
-    };
-    reader.readAsText(file);
-}
-
-// -------------------------
-//   QR
-// -------------------------
-function generarQREquipo() {
-    const t = document.getElementById("qrTextoEquipo").value;
-    new QRCode(document.getElementById("qrEquipo"), t);
-}
-
-function generarQREstudiante() {
-    const t = document.getElementById("qrTextoEstudiante").value;
-    new QRCode(document.getElementById("qrEstudiante"), t);
-}
-
-// -------------------------
-//   ESCÁNER QR
-// -------------------------
+// --------------------
+// DATOS
+// --------------------
+let prestamos = JSON.parse(localStorage.getItem("prestamos") || "[]");
 let scanner;
 
-function iniciarScanner() {
-    const video = document.getElementById("qr-video");
-    video.classList.remove("hidden");
-
-    scanner = new Html5Qrcode("qr-video");
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-            document.getElementById("equipo").value = decodedText;
-            document.getElementById("qr-result").innerText = "Detectado: " + decodedText;
-        }
-    );
+// --------------------
+// ADMIN
+// --------------------
+function activarAdmin(){
+ if(adminPass.value==="1234"){
+   document.querySelectorAll(".admin-only").forEach(e=>e.style.display="block");
+   adminEstado.innerText="Modo administrador activo";
+ } else alert("Contraseña incorrecta");
 }
 
+// --------------------
+// REGISTRAR
+// --------------------
+function registrar(){
+ const e=estudiante.value.trim();
+ const d=docente.value.trim();
+ const eq=equipo.value.trim();
+ if(!e||!d||!eq){alert("Faltan datos");return;}
+
+ if(prestamos.find(p=>p.eq===eq && !p.devuelto)){
+   estadoEquipo.innerHTML="🔴 Equipo actualmente prestado";
+   estadoEquipo.className="estado prestado";
+   return;
+ }
+
+ prestamos.push({
+   e,d,eq,
+   fechaPrestamo:new Date().toLocaleString(),
+   devuelto:false
+ });
+ guardar();
+ estadoEquipo.innerHTML="🟢 Préstamo registrado";
+ estadoEquipo.className="estado disponible";
+ equipo.value="";
+ mostrarHistorial();
+}
+
+// --------------------
+// DEVOLVER
+// --------------------
+function devolver(i){
+ prestamos[i].devuelto=true;
+ prestamos[i].fechaDevolucion=new Date().toLocaleString();
+ guardar();
+ mostrarHistorial();
+}
+
+// --------------------
+// HISTORIAL
+// --------------------
+function mostrarHistorial(){
+ historial.innerHTML="";
+ prestamos.forEach((p,i)=>{
+   const li=document.createElement("li");
+   li.innerHTML=`
+   ${p.fechaPrestamo} — ${p.e} — Equipo ${p.eq}
+   ${p.devuelto?"🟢 Devuelto":"🔴 Prestado"}
+   ${!p.devuelto?`<button onclick="devolver(${i})">Devolver</button>`:""}
+   `;
+   historial.appendChild(li);
+ });
+}
+
+// --------------------
+// BACKUP
+// --------------------
+function guardar(){
+ localStorage.setItem("prestamos",JSON.stringify(prestamos));
+}
+function exportar(){
+ const b=new Blob([JSON.stringify(prestamos,null,2)],{type:"application/json"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(b);
+ a.download="backup_abg.json";
+ a.click();
+}
+function importar(i){
+ const r=new FileReader();
+ r.onload=()=>{prestamos=JSON.parse(r.result);guardar();mostrarHistorial();};
+ r.readAsText(i.files[0]);
+}
+
+// --------------------
+// ESCÁNER QR
+// --------------------
+function iniciarScanner(cb){
+ if(scanner) scanner.stop();
+ scanner=new Html5Qrcode("qr-reader");
+ Html5Qrcode.getCameras().then(c=>{
+   scanner.start(c[0].id,{fps:10,qrbox:250},
+   t=>{cb(t);scanner.stop();},
+   ()=>{}
+   );
+ });
+}
+function scanEquipo(){ iniciarScanner(t=>equipo.value=t); }
+function scanEstudiante(){ iniciarScanner(t=>estudiante.value=t); }
+
+mostrarHistorial();
 </script>
 
 </body>
